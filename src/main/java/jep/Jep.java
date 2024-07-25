@@ -391,6 +391,11 @@ public abstract class Jep implements Interpreter {
 
     private native double nGetDoubleValue(long tstate, byte[] name);
 
+    public long getGlobalObject(byte[] name) {
+        return nGetObjectFromGlobalDict(this.tstate, name);
+    }
+
+    private native long nGetObjectFromGlobalDict(long tstate, byte[] name);
     // -------------------------------------------------- set things
 
     @Override
@@ -414,15 +419,15 @@ public abstract class Jep implements Interpreter {
         nSetDoubleStr(tstate, name, value);
     }
 
-    public void setCandle(byte[] bytes, double[] doubles) {
+    public void setCandle(byte[] bytes, double[] doubles, long pSetCandleCall) {
         isValidThread();
-        nSetCandle(tstate, bytes, doubles);
+        nSetCandle(tstate, bytes, doubles, pSetCandleCall);
     }
 
     private native void nSetDouble(long tstate, byte[] name, double value);
     private native void nSetDoubleStr(long tstate, String name, double value);
 
-    private native void nSetCandle(long tstate, byte[] bytes, double[] doubles);
+    private native void nSetCandle(long tstate, byte[] bytes, double[] doubles, long pSetCandleCall);
 
     /**
      * Gets the memory manager associated with this Jep instance. The memory

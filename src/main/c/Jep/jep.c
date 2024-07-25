@@ -237,10 +237,25 @@ JNIEXPORT void JNICALL Java_jep_Jep_nSetDoubleStr
     release_utf_char(env, jName, name);
 }
 
-JNIEXPORT void JNICALL Java_jep_Jep_nSetCandle
-  (JNIEnv* env, jobject, jlong tstate, jbyteArray jBytes, jdoubleArray jDoubles)
+JNIEXPORT jlong JNICALL Java_jep_Jep_nGetObjectFromGlobalDict
+  (JNIEnv* env, jobject, jlong _jepThread, jbyteArray varName)
 {
+  char* name = (char*) ((*env)->GetPrimitiveArrayCritical(env, varName, 0));
 
+  JepThread* jepThread = (JepThread *) _jepThread;
+  PyEval_AcquireThread(jepThread->tstate);
+
+  PyObject* pObject = PyDict_GetItemString(jepThread->globals, name);
+
+  PyEval_ReleaseThread(jepThread->tstate);
+
+  (*env)->ReleasePrimitiveArrayCritical(env, varName, name, 0);
+  return (jlong)(pObject);
+}
+
+JNIEXPORT void JNICALL Java_jep_Jep_nSetCandle
+  (JNIEnv* env, jobject, jlong _jepThread, jbyteArray jBytes, jdoubleArray jDoubles, jlong pSetCandleCall)
+{
   char* pByteData = (char*) ((*env)->GetPrimitiveArrayCritical(env, jBytes, 0));
   double* pDoubleData = (double*) ((*env)->GetPrimitiveArrayCritical(env, jDoubles, 0));
 
@@ -250,11 +265,13 @@ JNIEXPORT void JNICALL Java_jep_Jep_nSetCandle
   double close = *pDoubleData++;
   double volume = *pDoubleData++;
 
-  pyembed_setparameter_double(env, (intptr_t) tstate, "OPEN", open);
-  pyembed_setparameter_double(env, (intptr_t) tstate, "HIGH", high);
-  pyembed_setparameter_double(env, (intptr_t) tstate, "LOW", low);
-  pyembed_setparameter_double(env, (intptr_t) tstate, "CLOSE", close);
-  pyembed_setparameter_double(env, (intptr_t) tstate, "VOLUME", volume);
+  JepThread* jepThread = (JepThread *) _jepThread;
+  PyEval_AcquireThread(jepThread->tstate);
+
+  PyObject* pFunc = (PyObject*) pSetCandleCall;
+  PyObject_CallFunction(pFunc, "iddddd", 0, open, high, low, close, volume);
+
+  PyEval_ReleaseThread(jepThread->tstate);
 
   (*env)->ReleasePrimitiveArrayCritical(env, jDoubles, pDoubleData, 0);
   (*env)->ReleasePrimitiveArrayCritical(env, jBytes, pByteData, 0);
