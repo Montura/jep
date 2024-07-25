@@ -1491,3 +1491,73 @@ void pyembed_setparameter_object(JNIEnv *env,
 
     PyEval_ReleaseThread(jepThread->tstate);
 }
+
+void pyembed_setparameter_double(JNIEnv *env, intptr_t _jepThread, const char *name, jdouble value) {
+    JepThread* jepThread = (JepThread *) _jepThread;
+
+    PyEval_AcquireThread(jepThread->tstate);
+
+    PyObject* pyjob = PyFloat_FromDouble(value);
+
+    PyDict_SetItemString(jepThread->globals, name, pyjob); /* ownership */
+    Py_DECREF(pyjob);
+
+    PyEval_ReleaseThread(jepThread->tstate);
+}
+
+jdouble pyembed_getDoubleValue(JNIEnv *env, intptr_t _jepThread, const char *str) {
+    JepThread* jepThread = (JepThread *) _jepThread;
+
+    PyEval_AcquireThread(jepThread->tstate);
+
+    PyObject* result = PyDict_GetItemString(jepThread->globals, str);/* new ref */
+
+    // convert results to jobject
+    jdouble ret = PyFloat_AsDouble(result);
+
+    PyEval_ReleaseThread(jepThread->tstate);
+    return ret;
+}
+
+// returns 1 if finished, 0 if not, throws exception otherwise
+jlong pyembed_compile_string_2(JNIEnv *env, intptr_t _jepThread, const char *str) {
+    JepThread* jepThread = (JepThread *) _jepThread;
+    if (!jepThread) {
+        THROW_JEP(env, "Couldn't get thread objects.");
+        return 0;
+    }
+
+    PyEval_AcquireThread(jepThread->tstate);
+
+// Py_single_input
+    PyObject* code = Py_CompileString(str, "<stdin>", Py_file_input);
+//    fprintf(stdout, "code = 0x%ld\n", code);
+//    fflush(stdout);
+    if (code != NULL) {
+//        Py_DECREF(code);
+    } else if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+        PyErr_Clear();
+        code = 0;
+    } else {
+        process_py_exception(env);
+    }
+
+    PyEval_ReleaseThread(jepThread->tstate);
+    return (jlong)code;
+}
+
+void pyembed_eval_compiled_code(JNIEnv *env, intptr_t _jepThread, PyObject* compiledCode) {
+    JepThread* jepThread = (JepThread *) _jepThread;
+    if (!jepThread) {
+        THROW_JEP(env, "Couldn't get thread objects.");
+        return;
+    }
+
+    PyEval_AcquireThread(jepThread->tstate);
+//    fprintf(stdout, "pyembed_eval_compiled_code, compiledCode = 0x%ld\n", compiledCode);
+//    fflush(stdout);
+    PyObject* v = PyEval_EvalCode(compiledCode, jepThread->globals, jepThread->globals);
+    Py_XDECREF(v);
+
+    PyEval_ReleaseThread(jepThread->tstate);
+}

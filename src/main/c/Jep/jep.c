@@ -210,3 +210,68 @@ JNIEXPORT void JNICALL Java_jep_Jep_set__JLjava_lang_String_2Ljava_lang_Object_2
     pyembed_setparameter_object(env, (intptr_t) tstate, 0, name, jval);
     release_utf_char(env, jname, name);
 }
+
+
+JNIEXPORT jdouble JNICALL Java_jep_Jep_nGetDoubleValue
+  (JNIEnv* env, jobject, jlong tstate, jbyteArray jName)
+{
+    char* name = (char*) ((*env)->GetPrimitiveArrayCritical(env, jName, 0));
+    jdouble result = pyembed_getDoubleValue(env, tstate, name);
+    (*env)->ReleasePrimitiveArrayCritical(env, jName, name, 0);
+    return result;
+}
+
+JNIEXPORT void JNICALL Java_jep_Jep_nSetDouble
+  (JNIEnv* env, jobject, jlong tstate, jbyteArray jName, jdouble jValue)
+{
+    char* name = (char*) ((*env)->GetPrimitiveArrayCritical(env, jName, 0));
+    pyembed_setparameter_double(env, (intptr_t) tstate, name, jValue);
+    (*env)->ReleasePrimitiveArrayCritical(env, jName, name, 0);
+}
+
+JNIEXPORT void JNICALL Java_jep_Jep_nSetDoubleStr
+  (JNIEnv* env, jobject, jlong tstate, jstring jName, jdouble jValue)
+{
+    const char* name = jstring2char(env, jName);
+    pyembed_setparameter_double(env, (intptr_t) tstate, name, jValue);
+    release_utf_char(env, jName, name);
+}
+
+JNIEXPORT void JNICALL Java_jep_Jep_nSetCandle
+  (JNIEnv* env, jobject, jlong tstate, jbyteArray jBytes, jdoubleArray jDoubles)
+{
+
+  char* pByteData = (char*) ((*env)->GetPrimitiveArrayCritical(env, jBytes, 0));
+  double* pDoubleData = (double*) ((*env)->GetPrimitiveArrayCritical(env, jDoubles, 0));
+
+  double open = *pDoubleData++;
+  double high = *pDoubleData++;
+  double low = *pDoubleData++;
+  double close = *pDoubleData++;
+  double volume = *pDoubleData++;
+
+  pyembed_setparameter_double(env, (intptr_t) tstate, "OPEN", open);
+  pyembed_setparameter_double(env, (intptr_t) tstate, "HIGH", high);
+  pyembed_setparameter_double(env, (intptr_t) tstate, "LOW", low);
+  pyembed_setparameter_double(env, (intptr_t) tstate, "CLOSE", close);
+  pyembed_setparameter_double(env, (intptr_t) tstate, "VOLUME", volume);
+
+  (*env)->ReleasePrimitiveArrayCritical(env, jDoubles, pDoubleData, 0);
+  (*env)->ReleasePrimitiveArrayCritical(env, jBytes, pByteData, 0);
+}
+
+
+JNIEXPORT jlong JNICALL Java_jep_Jep_nCompileString
+  (JNIEnv* env, jobject, jlong tstate, jbyteArray jSrcCode)
+{
+    char* srcCode = (char*) ((*env)->GetPrimitiveArrayCritical(env, jSrcCode, 0));
+    jlong hSrcCode = pyembed_compile_string_2(env, (intptr_t) tstate, srcCode);
+    (*env)->ReleasePrimitiveArrayCritical(env, jSrcCode, srcCode, 0);
+    return hSrcCode;
+}
+
+JNIEXPORT void JNICALL Java_jep_Jep_nEvalCompiledCode
+  (JNIEnv* env, jobject, jlong tstate, jlong jCompiledCode)
+{
+    pyembed_eval_compiled_code(env, (intptr_t) tstate, (PyObject*)(jCompiledCode));
+}

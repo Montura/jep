@@ -345,6 +345,18 @@ public abstract class Jep implements Interpreter {
     private native int compileString(long tstate, String str)
             throws JepException;
 
+    public long compileCode(byte[] code) throws JepException {
+        return nCompileString(this.tstate, code);
+    }
+
+    private native long nCompileString(long tstate, byte[] str);
+
+    public void evalCompiledCode(long hCompiledCode) throws JepException {
+        nEvalCompiledCode(this.tstate, hCompiledCode);
+    }
+
+    private native void nEvalCompiledCode(long tstate, long hCompiledCode);
+
     private native void eval(long tstate, String str) throws JepException;
 
     @Override
@@ -372,6 +384,13 @@ public abstract class Jep implements Interpreter {
     private native Object getValue(long tstate, String str, Class<?> clazz)
             throws JepException;
 
+    public double getDoubleValue(byte[] name) {
+        isValidThread();
+        return nGetDoubleValue(this.tstate, name);
+    }
+
+    private native double nGetDoubleValue(long tstate, byte[] name);
+
     // -------------------------------------------------- set things
 
     @Override
@@ -384,6 +403,26 @@ public abstract class Jep implements Interpreter {
             throws JepException;
 
     // -------------------------------------------------- close me
+
+    public void setDouble(byte[] name, double value) throws JepException {
+        isValidThread();
+        nSetDouble(tstate, name, value);
+    }
+
+    public void setDoubleStr(String name, double value) throws JepException {
+        isValidThread();
+        nSetDoubleStr(tstate, name, value);
+    }
+
+    public void setCandle(byte[] bytes, double[] doubles) {
+        isValidThread();
+        nSetCandle(tstate, bytes, doubles);
+    }
+
+    private native void nSetDouble(long tstate, byte[] name, double value);
+    private native void nSetDoubleStr(long tstate, String name, double value);
+
+    private native void nSetCandle(long tstate, byte[] bytes, double[] doubles);
 
     /**
      * Gets the memory manager associated with this Jep instance. The memory

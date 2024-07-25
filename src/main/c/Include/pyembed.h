@@ -74,4 +74,11 @@ PyObject* pyembed_get_jep_module(void);
 
 void pyembed_setparameter_object(JNIEnv*, intptr_t, intptr_t, const char*,
                                  jobject);
+
+void pyembed_setparameter_double(JNIEnv*, intptr_t, const char*, jdouble);
+//void pyembed_setparameter_doubleNoExceptionCheck(intptr_t, const char*, jdouble);
+jdouble pyembed_getDoubleValue(JNIEnv *env, intptr_t, const char*);
+jlong pyembed_compile_string_2(JNIEnv *env, intptr_t, const char*);
+void pyembed_eval_compiled_code(JNIEnv *env, intptr_t, PyObject*);
+
 #endif
